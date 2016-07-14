@@ -1,0 +1,17 @@
+FROM centos:7
+
+RUN yum install -y yum-utils rpm-build
+RUN yum -y groupinstall "Development Tools"
+
+RUN yumdownloader --enablerepo=base-source --enablerepo=updates-source --source ImageMagick
+RUN rpm -ivh ImageMagick*
+
+WORKDIR /root/rpmbuild/SPECS
+RUN yum-builddep -y ImageMagick.spec
+
+# add --with-quantum-depth=8 option
+RUN perl -i'' -anpe 's/%configure/%configure --with-quantum-depth=8/'                ImageMagick.spec
+RUN perl -i'' -anpe 's/Release:		15%\{\?dist\}/Release:		15%{?dist}.Q8build/' ImageMagick.spec
+
+# build custom RPM
+RUN rpmbuild -bb ImageMagick.spec
